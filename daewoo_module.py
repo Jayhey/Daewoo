@@ -29,16 +29,17 @@ def pooling(x):
 	return pool
 
 
+
 class VGG16():
 	'''
 	VGG 16Network
 	'''
-	def __init__(self, bn):
+	def __init__(self, x, y, bn, regression):
 
 		# self.is_regression = regression
 
 		with tf.name_scope("layer_1"):
-			conv1 = conv2d(self.x, 64, batch_norm=bn)
+			conv1 = conv2d(x, 64, batch_norm=bn)
 			conv2 = conv2d(conv1, 64, batch_norm=bn)
 			pool1 = pooling(conv2)
 
@@ -71,11 +72,14 @@ class VGG16():
 			fc3 = tf.layers.dense(fc2, 4096, activation=tf.nn.relu)
 
 
+		self.logits = tf.layers.dense(fc3, 1, activation=tf.nn.relu)
+		self.loss = tf.losses.mean_squared_error(labels=y, predictions=self.logits)
+		self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+
+
 		self.global_step = tf.Variable(0, trainable=False, name='global_step')
 		self.learning_rate = tf.placeholder(tf.float32)
-		self.logits = tf.layers.dense(fc3, 1, activation=tf.nn.relu)
-		self.loss = tf.losses.mean_squared_error(labels=self.y, predictions=self.logits)
-		self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+
 		self.train = self.optimizer.minimize(self.loss)
 
 		tf.summary.scalar("loss", self.loss)
@@ -111,4 +115,47 @@ class VGG16():
 		# self.img_summary = tf.summary.merge(tf.get_collection('summaries_img'))
 
 
+# def VGG16(x, bn):
+#
+# 	with tf.name_scope("layer_1"):
+# 		conv1 = conv2d(x, 64, batch_norm=bn)
+# 		conv2 = conv2d(conv1, 64, batch_norm=bn)
+# 		pool1 = pooling(conv2)
+#
+# 	with tf.name_scope("layer_2"):
+# 		conv3 = conv2d(pool1, 128, batch_norm=bn)
+# 		conv4 = conv2d(conv3, 128, batch_norm=bn)
+# 		pool2 = pooling(conv4)
+#
+# 	with tf.name_scope("layer_3"):
+# 		conv5 = conv2d(pool2, 256, batch_norm=bn)
+# 		conv6 = conv2d(conv5, 256, batch_norm=bn)
+# 		conv7 = conv2d(conv6, 256, batch_norm=bn)
+# 		pool3 = pooling(conv7)
+#
+# 	with tf.name_scope("layer_4"):
+# 		conv8 = conv2d(pool3, 512, batch_norm=bn)
+# 		conv9 = conv2d(conv8, 512, batch_norm=bn)
+# 		conv10 = conv2d(conv9, 512, batch_norm=bn)
+# 		pool4 = pooling(conv10)
+#
+# 	with tf.name_scope("layer_5"):
+# 		conv11 = conv2d(pool4, 512, batch_norm=bn)
+# 		conv12 = conv2d(conv11, 512, batch_norm=bn)
+# 		conv13 = conv2d(conv12, 512, batch_norm=bn)
+# 		pool5 = pooling(conv13)
+#
+# 	with tf.name_scope("FC_layer"):
+# 		fc1 = tf.layers.flatten(pool5)
+# 		fc2 = tf.layers.dense(fc1, 4096, activation=tf.nn.relu)
+# 		fc3 = tf.layers.dense(fc2, 4096, activation=tf.nn.relu)
+#
+# 	global_step = tf.Variable(0, trainable=False, name='global_step')
+# 	learning_rate = tf.placeholder(tf.float32)
+# 	logits = tf.layers.dense(fc3, 1, activation=tf.nn.relu)
+# 	loss = tf.losses.mean_squared_error(labels=y, predictions=logits)
+# 	optimizer = tf.train.RMSPropOptimizer(learning_rate)
+# 	train = optimizer.minimize(loss)
+# 	tf.summary.scalar("loss", loss)
+# 	merged_summary_op = tf.summary.merge_all()
 
