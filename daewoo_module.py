@@ -1,7 +1,28 @@
 import tensorflow as tf
+import numpy as np
+
+NUM_CLASSES = 3
+
+def set_input(img, label):
+	np.random.seed(1234)
+	idx = np.random.permutation(len(img))
+	tr_idx = idx[:round(0.8 * len(idx))]
+	ts_idx = idx[round(0.8 * len(idx)):]
+
+	train_img = img[tr_idx]
+	train_label = label[tr_idx]
+	test_img = img[ts_idx]
+	test_label = label[ts_idx]
+
+	train_img_tensor = tf.constant(train_img)
+	train_label_tensor = tf.constant(train_label)
+	test_img_tensor = tf.constant(test_img)
+	test_label_tensor = tf.constant(test_label)
+
+	return train_img_tensor, train_label_tensor, test_img_tensor, test_label_tensor
 
 
-def input_tensor(img_path, label):
+def input_tensor_regression(img_path, label):
 	img_file = tf.read_file(img_path)
 	img_decoded = tf.image.decode_png(img_file)
 	img_float = tf.to_float(img_decoded)
@@ -9,6 +30,13 @@ def input_tensor(img_path, label):
 	label = tf.cast(label, tf.float32)
 	return img_crop, label
 
+def input_tensor(img_path, label):
+	img_file = tf.read_file(img_path)
+	img_decoded = tf.image.decode_png(img_file)
+	img_float = tf.to_float(img_decoded)
+	img_crop = tf.random_crop(img_float, size=[270, 270, 3])
+	label = tf.one_hot(label, NUM_CLASSES)
+	return img_crop, label
 
 def conv2d(x, num_outputs, batch_norm=True):
 	if batch_norm is True:
@@ -34,9 +62,7 @@ class VGG16():
 	'''
 	VGG 16Network
 	'''
-	def __init__(self, x, y, bn, regression):
-
-		# self.is_regression = regression
+	def __init__(self, x, y, bn, classification):
 
 		with tf.name_scope("layer_1"):
 			conv1 = conv2d(x, 64, batch_norm=bn)
@@ -71,19 +97,38 @@ class VGG16():
 			fc2 = tf.layers.dense(fc1, 4096, activation=tf.nn.relu)
 			fc3 = tf.layers.dense(fc2, 4096, activation=tf.nn.relu)
 
-
-		self.logits = tf.layers.dense(fc3, 1, activation=tf.nn.relu)
-		self.loss = tf.losses.mean_squared_error(labels=y, predictions=self.logits)
-		self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
-
-
-		self.global_step = tf.Variable(0, trainable=False, name='global_step')
 		self.learning_rate = tf.placeholder(tf.float32)
 
-		self.train = self.optimizer.minimize(self.loss)
+		if classification is True:
+			self.logits = tf.layers.dense(fc3, NUM_CLASSES, activation=tf.nn.relu)
+			self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.logits, labels=y))
+			self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+			self.global_step = tf.Variable(0, trainable=False, name='global_step')
+			self.train = self.optimizer.minimize(self.loss)
 
-		tf.summary.scalar("loss", self.loss)
+			self.y_prob = tf.nn.softmax(self.logits)
+			self.y_pred = tf.argmax(self.logits, 1)
+
+			self.correct_prediction = tf.equal(self.y_pred, tf.cast(y, tf.int64))
+			self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
+
+			tf.summary.scalar("accuray", self.accuracy)
+			tf.summary.scalar("loss", self.loss)
+
+		else:
+			self.logits = tf.layers.dense(fc3, 1, activation=tf.nn.relu)
+			self.loss = tf.losses.mean_squared_error(labels=y, predictions=self.logits)
+			self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+
+			self.global_step = tf.Variable(0, trainable=False, name='global_step')
+			self.train = self.optimizer.minimize(self.loss)
+
+			tf.summary.scalar("loss", self.loss)
+
 		self.merged_summary_op = tf.summary.merge_all()
+
+
+
 
 
 
