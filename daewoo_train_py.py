@@ -15,7 +15,7 @@ img = np.array([img_dir + x for x in os.listdir(img_dir)])
 label = pd.read_csv(os.path.join(root_dir, 'description.csv'), engine='python')
 
 # Classification과 regression 선택
-classification = True
+classification = False
 
 batch_size = 16
 epochs = 1
@@ -112,9 +112,9 @@ else:
 
 			if j % 10 == 0:
 				train_writer.add_summary(summary, j)
-				summary, acc, loss_ = sess.run([model.merged_summary_op, model.accuracy, model.loss],
+				summary, loss_ = sess.run([model.merged_summary_op, model.loss],
 				                               feed_dict={handle: test_handle})
-				print("Validation Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
+				print("Validation Iter : {}, Loss : {:.4f}".format(j, loss_))
 				test_writer.add_summary(summary, j)
 
 	print("-----------End of training-------------")
