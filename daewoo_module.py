@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 NUM_CLASSES = 3
-
+batch_size = 16
 
 # input 설정. 경로 string을 텐서로 바꿈
 def set_input(img, label):
@@ -76,6 +76,7 @@ def dense(x, output, fn=tf.nn.relu, batch_norm=True):
 class VGG16():
 	def __init__(self, x, y, bn, classification):
 
+		# x_crop = tf.random_crop(x, size=[x.get_shape().as_list()[0], 270, 270, 3])
 		with tf.name_scope("layer_1"):
 			conv1 = conv2d(x, 64, batch_norm=bn)
 			conv2 = conv2d(conv1, 64, batch_norm=bn)

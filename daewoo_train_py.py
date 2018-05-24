@@ -1,10 +1,10 @@
 import pandas as pd
 import os
+
 os.environ['FOR_DISABLE_CONSOLE_CTRL_HANDLER'] = '1'
 from tensorflow.contrib.data import Dataset
 from daewoo_module import *
 import time
-
 
 root_dir = ".\\input_data"
 # img_dir = os.path.join(root_dir, '/figure'). 이미지는 os.path.join쓰면 안되는경우가 있음
@@ -17,17 +17,15 @@ label = pd.read_csv(os.path.join(root_dir, 'description.csv'), engine='python')
 # Classification과 regression 선택
 classification = True
 
-
 batch_size = 16
-epochs = 2
-
+epochs = 1
 
 if classification is True:
-    label = pd.cut(label['WVHT ft.y'], bins=[0,5,10,100],labels=[0,1,2], include_lowest=True)
-    label = np.array(label)
+	label = pd.cut(label['WVHT ft.y'], bins=[0, 5, 10, 100], labels=[0, 1, 2], include_lowest=True)
+	label = np.array(label)
 else:
-    label = label['WVHT ft.y'].values
-    label = ((label - np.mean(label))/np.std(label)).reshape(-1,1)
+	label = label['WVHT ft.y'].values
+	label = ((label - np.mean(label)) / np.std(label)).reshape(-1, 1)
 
 train_img_tensor, train_label_tensor, test_img_tensor, test_label_tensor = set_input(img, label)
 
@@ -37,6 +35,7 @@ test_imgs = Dataset.from_tensor_slices((test_img_tensor, test_label_tensor))
 if classification is True:
 	train_imgs = train_imgs.map(input_tensor).batch(batch_size).shuffle(buffer_size=100).repeat()
 	test_imgs = test_imgs.map(input_tensor).batch(batch_size).shuffle(buffer_size=100).repeat()
+
 else:
 	train_imgs = train_imgs.map(input_tensor_regression).batch(batch_size).shuffle(buffer_size=100).repeat()
 	test_imgs = test_imgs.map(input_tensor_regression).batch(batch_size).shuffle(buffer_size=100).repeat()
@@ -54,7 +53,10 @@ test_batches = (len(label) - round(0.8 * len(label))) // batch_size
 model_name = "VGG16_classification"
 model = VGG16(x, y, bn=True, classification=classification)
 
-
+if classification is True:
+	model_name = "VGG16_classification"
+else:
+	model_name = "VGG16_regression"
 
 start_time = time.time()
 
@@ -71,25 +73,49 @@ test_handle = sess.run(test_iterator.string_handle())
 train_writer = tf.summary.FileWriter(os.path.join(logs_path, model_name, 'train'), sess.graph)
 test_writer = tf.summary.FileWriter(os.path.join(logs_path, model_name, 'test'))
 
-print("Training!")
-for i in range(epochs):
-	print("-------{} Epoch--------".format(i + 1))
-	sess.run(train_iterator.initializer)
-	sess.run(test_iterator.initializer)
-	for j in range(train_batches):
-		summary, _, acc, loss_ = sess.run([model.merged_summary_op, model.train, model.accuracy, model.loss],
-		                         feed_dict={handle: train_handle, model.learning_rate: LEARNING_RATE})
-		print("Training Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
+if classification is True:
 
+	print("Training!")
+	for i in range(epochs):
+		print("-------{} Epoch--------".format(i + 1))
+		sess.run(train_iterator.initializer)
+		sess.run(test_iterator.initializer)
+		for j in range(train_batches):
+			summary, _, acc, loss_ = sess.run([model.merged_summary_op, model.train, model.accuracy, model.loss],
+			                                  feed_dict={handle: train_handle, model.learning_rate: LEARNING_RATE})
+			print("Training Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
 
-		if j % 10 == 0:
-			train_writer.add_summary(summary)
-			summary, acc, loss_ = sess.run([model.merged_summary_op, model.accuracy, model.loss],
-			                               feed_dict={handle: test_handle})
-			print("Validation Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
-			test_writer.add_summary(summary)
+			if j % 10 == 0:
+				train_writer.add_summary(summary, j)
+				summary, acc, loss_ = sess.run([model.merged_summary_op, model.accuracy, model.loss],
+				                               feed_dict={handle: test_handle})
+				print("Validation Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
+				test_writer.add_summary(summary, j)
 
-print("-----------End of training-------------")
+	print("-----------End of training-------------")
 
-end_time = time.time() - start_time
-print("{} seconds".format(end_time))
+	end_time = time.time() - start_time
+	print("{} seconds".format(end_time))
+
+else:
+	print("Training!")
+	for i in range(epochs):
+		print("-------{} Epoch--------".format(i + 1))
+		sess.run(train_iterator.initializer)
+		sess.run(test_iterator.initializer)
+		for j in range(train_batches):
+			summary, _, loss_ = sess.run([model.merged_summary_op, model.train, model.loss],
+			                             feed_dict={handle: train_handle, model.learning_rate: LEARNING_RATE})
+			print("Training Iter : {}, Loss : {:.4f}".format(j, loss_))
+
+			if j % 10 == 0:
+				train_writer.add_summary(summary, j)
+				summary, acc, loss_ = sess.run([model.merged_summary_op, model.accuracy, model.loss],
+				                               feed_dict={handle: test_handle})
+				print("Validation Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
+				test_writer.add_summary(summary, j)
+
+	print("-----------End of training-------------")
+
+	end_time = time.time() - start_time
+	print("{} seconds".format(end_time))
