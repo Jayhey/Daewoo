@@ -66,7 +66,7 @@ config.gpu_options.allow_growth = True
 LEARNING_RATE = 0.00001
 # classification
 sess = tf.Session(config=config)
-
+saver = tf.train.Saver()
 sess.run(tf.global_variables_initializer())
 train_handle = sess.run(train_iterator.string_handle())
 test_handle = sess.run(test_iterator.string_handle())
@@ -97,6 +97,8 @@ if classification is True:
 	end_time = time.time() - start_time
 	print("{} seconds".format(end_time))
 
+	saver.save(sess, os.path.join(os.getcwd(), model_name))
+
 else:
 	print("Training!")
 	for i in range(epochs):
@@ -119,3 +121,5 @@ else:
 
 	end_time = time.time() - start_time
 	print("{} seconds".format(end_time))
+
+	saver.save(sess, os.path.join(os.getcwd(), model_name))
