@@ -15,7 +15,7 @@ img = np.array([img_dir + x for x in os.listdir(img_dir)])
 label = pd.read_csv(os.path.join(root_dir, 'description.csv'), engine='python')
 
 # Classification과 regression 선택
-classification = False
+classification = True
 
 batch_size = 16
 epochs = 1
@@ -83,14 +83,15 @@ if classification is True:
 		for j in range(train_batches):
 			summary, _, acc, loss_ = sess.run([model.merged_summary_op, model.train, model.accuracy, model.loss],
 			                                  feed_dict={handle: train_handle, model.learning_rate: LEARNING_RATE})
-			print("Training Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
+			step = tf.train.global_step(sess, model.global_step)
+			print("Training Iter : {}, Acc : {}, Loss : {:.4f}".format(step, acc, loss_))
 
 			if j % 10 == 0:
-				train_writer.add_summary(summary, j)
+				train_writer.add_summary(summary, step)
 				summary, acc, loss_ = sess.run([model.merged_summary_op, model.accuracy, model.loss],
 				                               feed_dict={handle: test_handle})
-				print("Validation Iter : {}, Acc : {}, Loss : {:.4f}".format(j, acc, loss_))
-				test_writer.add_summary(summary, j)
+				print("Validation Iter : {}, Acc : {}, Loss : {:.4f}".format(step, acc, loss_))
+				test_writer.add_summary(summary, step)
 
 	print("-----------End of training-------------")
 
@@ -108,14 +109,15 @@ else:
 		for j in range(train_batches):
 			summary, _, loss_ = sess.run([model.merged_summary_op, model.train, model.loss],
 			                             feed_dict={handle: train_handle, model.learning_rate: LEARNING_RATE})
-			print("Training Iter : {}, Loss : {:.4f}".format(j, loss_))
+			step = tf.train.global_step(sess, model.global_step)
+			print("Training Iter : {}, Loss : {:.4f}".format(step, loss_))
 
 			if j % 10 == 0:
-				train_writer.add_summary(summary, j)
+				train_writer.add_summary(summary, step)
 				summary, loss_ = sess.run([model.merged_summary_op, model.loss],
-				                               feed_dict={handle: test_handle})
-				print("Validation Iter : {}, Loss : {:.4f}".format(j, loss_))
-				test_writer.add_summary(summary, j)
+				                          feed_dict={handle: test_handle})
+				print("Validation Iter : {}, Loss : {:.4f}".format(step, loss_))
+				test_writer.add_summary(summary, step)
 
 	print("-----------End of training-------------")
 
