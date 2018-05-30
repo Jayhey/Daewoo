@@ -120,9 +120,19 @@ class VGG16():
 		if classification is True:
 			self.logits = dense(fc3, NUM_CLASSES, fn=None, batch_norm=True)
 			self.loss = tf.losses.softmax_cross_entropy(onehot_labels=y, logits=self.logits)
+			self.lr_decay = tf.train.exponential_decay(self.learning_rate, self.global_step, 1000, 0.9, staircase=True)
+			self.extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+			with tf.control_dependencies(self.extra_update_ops):
+				self.adam = tf.train.AdamOptimizer(self.lr_decay).minimize(self.loss,
+				                                                           global_step=self.global_step)
+				self.sgd = tf.train.GradientDescentOptimizer(self.lr_decay).minimize(self.loss,
+				                                                                     global_step=self.global_step)
+				self.rms = tf.train.RMSPropOptimizer(self.lr_decay).minimize(self.loss,
+				                                                             global_step=self.global_step)
+				self.momentum = tf.train.MomentumOptimizer(self.lr_decay, momentum=0.9).minimize(self.loss,
+				                                                                                 global_step=self.global_step)
 			# self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
-			self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
-			self.train = self.optimizer.minimize(self.loss, global_step=self.global_step)
+			# self.train = self.optimizer.minimize(self.loss, global_step=self.global_step)
 
 			self.y_prob = tf.nn.softmax(self.logits)
 			self.y_pred = tf.argmax(self.y_prob, 1)
@@ -136,9 +146,20 @@ class VGG16():
 		else:
 			self.logits = tf.layers.dense(fc3, 1, activation=tf.nn.relu)
 			self.loss = tf.losses.mean_squared_error(labels=y, predictions=self.logits)
+			self.lr_decay = tf.train.exponential_decay(self.learning_rate, self.global_step, 1000, 0.9, staircase=True)
+			self.extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+			with tf.control_dependencies(self.extra_update_ops):
+				self.adam = tf.train.AdamOptimizer(self.lr_decay).minimize(self.loss,
+				                                                           global_step=self.global_step)
+				self.sgd = tf.train.GradientDescentOptimizer(self.lr_decay).minimize(self.loss,
+				                                                                     global_step=self.global_step)
+				self.rms = tf.train.RMSPropOptimizer(self.lr_decay).minimize(self.loss,
+				                                                             global_step=self.global_step)
+				self.momentum = tf.train.MomentumOptimizer(self.lr_decay, momentum=0.9).minimize(self.loss,
+				                                                                                 global_step=self.global_step)
 			# self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
-			self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
-			self.train = self.optimizer.minimize(self.loss)
+			# self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+			# self.train = self.optimizer.minimize(self.loss)
 
 			tf.summary.scalar("loss", self.loss)
 

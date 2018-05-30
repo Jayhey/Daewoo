@@ -15,10 +15,10 @@ img = np.array([img_dir + x for x in os.listdir(img_dir)])
 label = pd.read_csv(os.path.join(root_dir, 'description.csv'), engine='python')
 
 # Classification과 regression 선택
-classification = True
+classification = False
 
-batch_size = 32
-epochs = 3
+batch_size = 64
+epochs = 5
 
 if classification is True:
 	label = pd.cut(label['WVHT ft.y'], bins=[0, 5, 10, 100], labels=[0, 1, 2], include_lowest=True)
@@ -65,8 +65,8 @@ start_time = time.time()
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 
-LEARNING_RATE = 0.0001
-# classification
+
+
 sess = tf.Session(config=config)
 saver = tf.train.Saver()
 sess.run(tf.global_variables_initializer())
@@ -74,6 +74,9 @@ train_handle = sess.run(train_iterator.string_handle())
 test_handle = sess.run(test_iterator.string_handle())
 train_writer = tf.summary.FileWriter(os.path.join(logs_path, model_name, 'train'), sess.graph)
 test_writer = tf.summary.FileWriter(os.path.join(logs_path, model_name, 'test'))
+
+LEARNING_RATE = 0.001
+optimizer = model.rms
 
 if classification is True:
 
@@ -83,7 +86,7 @@ if classification is True:
 		sess.run(train_iterator.initializer)
 		sess.run(test_iterator.initializer)
 		for j in range(train_batches):
-			summary, _, acc, loss_ = sess.run([model.merged_summary_op, model.train, model.accuracy, model.loss],
+			summary, _, acc, loss_ = sess.run([model.merged_summary_op, optimizer, model.accuracy, model.loss],
 			                                  feed_dict={handle: train_handle, model.learning_rate: LEARNING_RATE})
 			step = tf.train.global_step(sess, model.global_step)
 			print("Training Iter : {}, Acc : {}, Loss : {:.4f}".format(step, acc, loss_))
@@ -109,7 +112,7 @@ else:
 		sess.run(train_iterator.initializer)
 		sess.run(test_iterator.initializer)
 		for j in range(train_batches):
-			summary, _, loss_ = sess.run([model.merged_summary_op, model.train, model.loss],
+			summary, _, loss_ = sess.run([model.merged_summary_op, optimizer, model.loss],
 			                             feed_dict={handle: train_handle, model.learning_rate: LEARNING_RATE})
 			step = tf.train.global_step(sess, model.global_step)
 			print("Training Iter : {}, Loss : {:.4f}".format(step, loss_))
