@@ -15,10 +15,10 @@ img = np.array([img_dir + x for x in os.listdir(img_dir)])
 label = pd.read_csv(os.path.join(root_dir, 'description.csv'), engine='python')
 
 # Classification과 regression 선택
-classification = False
+classification = True
 
 batch_size = 64
-epochs = 5
+epochs = 1
 
 if classification is True:
 	label = pd.cut(label['WVHT ft.y'], bins=[0, 5, 10, 100], labels=[0, 1, 2], include_lowest=True)
@@ -27,22 +27,26 @@ else:
 	label = label['WVHT ft.y'].values
 	label = ((label - np.mean(label)) / np.std(label)).reshape(-1, 1)
 
+
 train_img_tensor, train_label_tensor, test_img_tensor, test_label_tensor = set_input(img, label)
 
 
 train_imgs = Dataset.from_tensor_slices((train_img_tensor, train_label_tensor))
 test_imgs = Dataset.from_tensor_slices((test_img_tensor, test_label_tensor))
+infer_imgs = Dataset.from_tensor_slices((test_img_tensor, test_label_tensor))
 
 if classification is True:
 	train_imgs = train_imgs.map(input_tensor).batch(batch_size).shuffle(buffer_size=100).repeat()
 	test_imgs = test_imgs.map(input_tensor).batch(batch_size).shuffle(buffer_size=100).repeat()
+	infer_imgs = infer_imgs.map(input_tensor).batch(int(test_label_tensor.shape[0]))
 else:
 	train_imgs = train_imgs.map(input_tensor_regression).batch(batch_size).shuffle(buffer_size=100).repeat()
 	test_imgs = test_imgs.map(input_tensor_regression).batch(batch_size).shuffle(buffer_size=100).repeat()
-
+	infer_imgs = infer_imgs.map(input_tensor).batch(int(test_label_tensor.shape[0]))
 
 train_iterator = train_imgs.make_initializable_iterator()
 test_iterator = test_imgs.make_initializable_iterator()
+infer_iterator = infer_imgs.make_initializable_iterator()
 handle = tf.placeholder(tf.string, shape=[])
 
 iterator = tf.data.Iterator.from_string_handle(handle, train_imgs.output_types, train_imgs.output_shapes)
@@ -66,12 +70,12 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 
 
-
 sess = tf.Session(config=config)
 saver = tf.train.Saver()
 sess.run(tf.global_variables_initializer())
 train_handle = sess.run(train_iterator.string_handle())
 test_handle = sess.run(test_iterator.string_handle())
+# infer_handle = sess.run(infer_iterator.string_handle())
 train_writer = tf.summary.FileWriter(os.path.join(logs_path, model_name, 'train'), sess.graph)
 test_writer = tf.summary.FileWriter(os.path.join(logs_path, model_name, 'test'))
 
@@ -103,7 +107,7 @@ if classification is True:
 	end_time = time.time() - start_time
 	print("{} seconds".format(end_time))
 
-	saver.save(sess, os.path.join(logs_path, model_name))
+	saver.save(sess, os.path.join(logs_path, 'VGG16_classification_crop', model_name))
 
 else:
 	print("Training!")
@@ -129,4 +133,20 @@ else:
 	end_time = time.time() - start_time
 	print("{} seconds".format(end_time))
 
-	saver.save(sess, os.path.join(logs_path, model_name))
+	saver.save(sess, os.path.join(logs_path, 'VGG16_regression_crop', model_name))
+
+
+# Inference
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+
+sess = tf.Session(config=config)
+saver = tf.train.import_meta_graph(os.path.join(logs_path, 'VGG16_classification_crop', 'VGG16_classification_crop.meta'))
+saver.restore(sess, tf.train.latest_checkpoint(os.path.join(logs_path, 'VGG16_classification_crop')))
+sess.run(tf.global_variables_initializer())
+
+
+infer_imgs = infer_imgs.map(input_tensor).batch(int(test_label_tensor.shape[0]))
+infer_handle = sess.run(infer_iterator.string_handle())
+sess.run(infer_iterator.initializer)
+prob = sess.run(model.y_prob, feed_dict={handle: infer_handle})
