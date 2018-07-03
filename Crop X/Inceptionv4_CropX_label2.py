@@ -14,6 +14,7 @@ from tflearn.layers.core import dropout, flatten, fully_connected, input_data
 from tflearn.layers.merge_ops import merge
 from tflearn.layers.normalization import batch_normalization
 from tflearn.utils import repeat
+import numpy as np
 
 ##### 이미지 전처리, 네트워크 함수
 NUM_CLASSES = 2
