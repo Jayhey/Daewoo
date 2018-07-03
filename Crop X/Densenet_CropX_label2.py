@@ -6,6 +6,7 @@ import sklearn.metrics as skm
 import time
 from collections import Counter
 import tflearn
+import numpy as np
 
 #### tflearn.densnet_block 없다고 나올경우 ####
 # 'C:\Users\[컴퓨터 사용자 계정]\Anaconda3\Lib\site-packages\tflearn\layers\conv.py' 에다가
