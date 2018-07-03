@@ -11,6 +11,7 @@ from tflearn.layers.conv import conv_2d, max_pool_2d, avg_pool_2d
 from tflearn.layers.normalization import local_response_normalization
 from tflearn.layers.merge_ops import merge
 from tflearn.layers.estimator import regression
+import numpy as np
 
 ##### 이미지 전처리, 네트워크 함수
 NUM_CLASSES = 2
