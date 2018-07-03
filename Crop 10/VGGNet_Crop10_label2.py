@@ -5,6 +5,7 @@ import tensorflow as tf
 import sklearn.metrics as skm
 import time
 from collections import Counter
+import numpy as np
 
 ##### 이미지 전처리, 네트워크 함수
 NUM_CLASSES = 2
