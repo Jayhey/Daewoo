@@ -46,7 +46,7 @@ def input_tensor(img_path, label):
     label = tf.one_hot(label, NUM_CLASSES)
     
 
-    return tf.reshape(img_crop, [-1,135,480,3]), tf.reshape(label, [-1,3])		
+    return img_crop, label		
 	
 def make_batch(dataset):
     dataset_0 = dataset.filter(lambda x,y: tf.reshape(tf.equal(tf.argmax(y), tf.argmax(tf.constant([1,0], tf.float32))), []))
@@ -194,13 +194,13 @@ test_imgs = tf.data.Dataset.from_tensor_slices((test_img_tensor, test_label_tens
 infer_imgs = tf.data.Dataset.from_tensor_slices((test_img_tensor, test_label_tensor))
 
 if classification is True:
-    train_imgs = train_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    test_imgs = test_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    infer_imgs = infer_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).batch(batch_size)
+    train_imgs = train_imgs.map(input_tensor).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor).batch(batch_size)
 else:
-    train_imgs = train_imgs.map(input_tensor_regression).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    test_imgs = test_imgs.map(input_tensor_regression).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    infer_imgs = infer_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).batch(batch_size)
+    train_imgs = train_imgs.map(input_tensor_regression).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor_regression).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor).batch(batch_size)
 
 train_iterator = train_imgs.make_initializable_iterator()
 test_iterator = test_imgs.make_initializable_iterator()
