@@ -63,7 +63,7 @@ if classification == True & crop == True:
     test_imgs = test_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
     infer_imgs = infer_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).batch(batch_size)
 
-if classfication == True & crop == False:
+if classification == True & crop == False:
     train_imgs = train_imgs.map(input_tensor).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
     test_imgs = test_imgs.map(input_tensor).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
     infer_imgs = infer_imgs.map(input_tensor).batch(batch_size)
