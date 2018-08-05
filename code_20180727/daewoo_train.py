@@ -1,6 +1,12 @@
 import pandas as pd
 import os
 import tensorflow as tf
+import os
+os.chdir('D:/daewoo')
+import sys
+sys.path.append('D:/daewoo')
+
+
 from daewoo_module import *
 import sklearn.metrics as skm
 import time
@@ -23,34 +29,32 @@ img = np.array([img_dir + x for x in img])
 ##### 반드시 확인 필요#######
 ########################
 classification = True
-crop = False # True = 10 crop, False = original size
-RGB = False # True = RGB, False = Grayscale
-resize = True # True = 240x70, False = 480x135 
+crop = False  # True = 10 crop, False = original size
+RGB = False  # True = RGB, False = Grayscale
+resize = True  # True = 240x70, False = 480x135
 
 if crop == True:
-	batch_size = 64
+    batch_size = 64
 else:
-	batch_size = 16
+    batch_size = 16
 
 epochs = 5
 
 if classification is True:
-   label = pd.cut(df['WVHT ft.y'], bins=[0, 5.2, 7.9, 100], labels=[0, 1, 2], include_lowest=True).values
+    label = pd.cut(df['WVHT ft.y'], bins=[0, 5.2, 7.9, 100], labels=[0, 1, 2], include_lowest=True).values
 else:
-   label = df['WVHT ft.y'].values
-   label = ((label - np.mean(label)) / np.std(label)).reshape(-1, 1)
-   
-idx = [i for i in range(len(label)) if label[i] !=1]
+    label = df['WVHT ft.y'].values
+    label = ((label - np.mean(label)) / np.std(label)).reshape(-1, 1)
+
+idx = [i for i in range(len(label)) if label[i] != 1]
 
 img = img[idx]
 label = label[idx]
 
-
 for i in range(len(label)):
     if label[i] == 2:
         label[i] = 1
-		
-		
+
 # Tensorflow Dataset API
 train_img_tensor, train_label_tensor, test_img_tensor, test_label_tensor, tr_idx, ts_idx = set_input(img, label)
 
@@ -58,17 +62,49 @@ train_imgs = tf.data.Dataset.from_tensor_slices((train_img_tensor, train_label_t
 test_imgs = tf.data.Dataset.from_tensor_slices((test_img_tensor, test_label_tensor))
 infer_imgs = tf.data.Dataset.from_tensor_slices((test_img_tensor, test_label_tensor))
 
-if classification == True & crop == True:
-    train_imgs = train_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    test_imgs = test_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    infer_imgs = infer_imgs.map(input_tensor).apply(tf.contrib.data.unbatch()).batch(batch_size)
+if classification == True and crop == True and RGB == True:
+    train_imgs = train_imgs.map(input_tensor_crop_RGB).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor_crop_RGB).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor_crop_RGB).apply(tf.contrib.data.unbatch()).batch(batch_size)
 
-if classification == True & crop == False:
-    train_imgs = train_imgs.map(input_tensor).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    test_imgs = test_imgs.map(input_tensor).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(batch_size).repeat()
-    infer_imgs = infer_imgs.map(input_tensor).batch(batch_size)
 
-	
+if classification == True and crop == True and RGB == False:
+    train_imgs = train_imgs.map(input_tensor_crop_gray).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(
+        lambda x: make_batch(x)).batch(batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor_crop_gray).apply(tf.contrib.data.unbatch()).shuffle(buffer_size=100).apply(
+        lambda x: make_batch(x)).batch(batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor_crop_gray).apply(tf.contrib.data.unbatch()).batch(batch_size)
+
+
+if classification == True and crop == False and resize == False and RGB == True:
+    train_imgs = train_imgs.map(input_tensor_resizeX_RGB).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor_resizeX_RGB).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor_resizeX_RGB).batch(batch_size)
+
+if classification == True and crop == False and resize == False and RGB == False:
+    train_imgs = train_imgs.map(input_tensor_resizeX_gray).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor_resizeX_gray).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor_resizeX_gray).batch(batch_size)
+
+if classification == True and crop == False and resize == True and RGB == True:
+    train_imgs = train_imgs.map(input_tensor_resizeO_RGB).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor_resizeO_RGB).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor_resizeO_RGB).batch(batch_size)
+
+if classification == True and crop == False and resize == True and RGB == False:
+    train_imgs = train_imgs.map(input_tensor_resizeO_gray).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    test_imgs = test_imgs.map(input_tensor_resizeO_gray).shuffle(buffer_size=100).apply(lambda x: make_batch(x)).batch(
+        batch_size).repeat()
+    infer_imgs = infer_imgs.map(input_tensor_resizeO_gray).batch(batch_size)
+
+
 
 train_iterator = train_imgs.make_initializable_iterator()
 test_iterator = test_imgs.make_initializable_iterator()
@@ -80,9 +116,9 @@ x, y = iterator.get_next()
 
 # train class: [22789, 19659]
 if crop == True:
-	train_batches = 22789*2*10 // batch_size
+    train_batches = 22789 * 2 * 10 // batch_size
 else:
-	train_batches = 22789*2 // batch_size
+    train_batches = 22789 * 2 // batch_size
 
 ######################
 ##### 4개 모델 중 선택 ###
@@ -104,7 +140,6 @@ start_time = time.time()
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 
-
 sess = tf.Session(config=config)
 saver = tf.train.Saver()
 sess.run(tf.global_variables_initializer())
@@ -116,8 +151,6 @@ test_writer = tf.summary.FileWriter(os.path.join(logs_path, model_name, 'test'))
 
 LEARNING_RATE = 0.001
 optimizer = model.rms
-
-
 
 #####################
 # Training###########
@@ -147,7 +180,8 @@ if classification is True:
     end_time = time.time() - start_time
     print("{} seconds".format(end_time))
 
-    saver.save(sess, os.path.join(logs_path, '{model_name}_classification_{Crop O, X}_{RGB O, X}_{resize O, X}', model_name))
+    saver.save(sess,
+               os.path.join(logs_path, '{model_name}_classification_{Crop O, X}_{RGB O, X}_{resize O, X}', model_name))
 
 else:
     print("Training!")
@@ -173,67 +207,62 @@ else:
     end_time = time.time() - start_time
     print("{} seconds".format(end_time))
 
-    saver.save(sess, os.path.join(logs_path, '{model_name}_regression_{Crop O, X}_{RGB O, X}_{resize O, X}', model_name))
+    saver.save(sess,
+               os.path.join(logs_path, '{model_name}_regression_{Crop O, X}_{RGB O, X}_{resize O, X}', model_name))
 
 ####################
-#Inference##########
+# Inference##########
 ####################
 
 sess.run(infer_iterator.initializer)
-y_true, y_pred = sess.run([model.y, model.y_pred], feed_dict={handle:infer_handle})
+y_true, y_pred = sess.run([model.y, model.y_pred], feed_dict={handle: infer_handle})
 i = 0
 
- 
 while True:
     try:
-         tmp_true, tmp_pred = sess.run([model.y, model.y_pred], feed_dict={handle:infer_handle})
-         y_true = np.concatenate((y_true, tmp_true))
-         y_pred = np.concatenate((y_pred, tmp_pred))
-         if i % 200 == 0:
-             print(i)
-         i += 1
+        tmp_true, tmp_pred = sess.run([model.y, model.y_pred], feed_dict={handle: infer_handle})
+        y_true = np.concatenate((y_true, tmp_true))
+        y_pred = np.concatenate((y_pred, tmp_pred))
+        if i % 200 == 0:
+            print(i)
+        i += 1
     except:
-         y_true = np.array([np.where(r==1)[0][0] for r in y_true])
-         break
+        y_true = np.array([np.where(r == 1)[0][0] for r in y_true])
+        break
 
 len(y_pred)
 
 if crop == True:
-	y_true_final = [y_true[10*i] for i in range(len(ts_idx))]
-	y_pred_final = [np.argmax([list(y_pred[10*i:10*(i+1)]).count(0),5]) for i in range(len(ts_idx))]
+    y_true_final = [y_true[10 * i] for i in range(len(ts_idx))]
+    y_pred_final = [np.argmax([list(y_pred[10 * i:10 * (i + 1)]).count(0), 5]) for i in range(len(ts_idx))]
 
-	df2 = pd.DataFrame(data={'y_true':y_true_final, 'y_pred':y_pred_final} )
-	df2.to_csv("{}_pred.csv".format(model_name), encoding='utf-8', index=False)
+    df2 = pd.DataFrame(data={'y_true': y_true_final, 'y_pred': y_pred_final})
+    df2.to_csv("{}_pred.csv".format(model_name), encoding='utf-8', index=False)
 
+    cm = skm.confusion_matrix(y_true_final, y_pred_final)
+    acc = skm.accuracy_score(y_true_final, y_pred_final)  # Accuracy
+    print("Accuracy : {}".format(acc))
 
-	cm = skm.confusion_matrix(y_true_final, y_pred_final)
-	acc = skm.accuracy_score(y_true_final, y_pred_final)  # Accuracy
-	print("Accuracy : {}".format(acc))
+    pd.DataFrame(cm).to_csv("{}_cm.csv".format(model_name), encoding='utf-8')
 
-	pd.DataFrame(cm).to_csv("{}_cm.csv".format(model_name), encoding='utf-8')
+    report = skm.precision_recall_fscore_support(y_true_final, y_pred_final)
+    specificity_0 = cm[1][1] / (cm[1][1] + cm[1][0])
+    out_dict = {"precision": report[0].round(3), "recall": report[1].round(3), "f1-score": report[2].round(3),
+                "BCR": np.sqrt(report[1][0] * specificity_0).round(3)}
 
-	report = skm.precision_recall_fscore_support(y_true_final, y_pred_final)
-	specificity_0 = cm[1][1]/(cm[1][1]+cm[1][0])
-	out_dict = { "precision" :report[0].round(3), "recall" : report[1].round(3),"f1-score" : report[2].round(3),
-				 "BCR": np.sqrt(report[1][0]*specificity_0).round(3)}
-
-	pd.DataFrame(out_dict).to_csv("{}_report.csv".format(model_name), encoding='utf-8')
+    pd.DataFrame(out_dict).to_csv("{}_report.csv".format(model_name), encoding='utf-8')
 
 if crop == False:
-	df2 = pd.DataFrame(data={'y_true':y_true, 'y_pred':y_pred} )
-	df2.to_csv("{}_pred.csv".format(model_name), encoding='utf-8', index=False)
+    df2 = pd.DataFrame(data={'y_true': y_true, 'y_pred': y_pred})
+    df2.to_csv("{}_pred.csv".format(model_name), encoding='utf-8', index=False)
 
+    cm = skm.confusion_matrix(y_true, y_pred)
+    acc = skm.accuracy_score(y_true, y_pred)  # Accuracy
+    print("Accuracy : {}".format(acc))
 
-	cm = skm.confusion_matrix(y_true, y_pred)
-	acc = skm.accuracy_score(y_true, y_pred)  # Accuracy
-	print("Accuracy : {}".format(acc))
+    pd.DataFrame(cm).to_csv("{}_cm.csv".format(model_name), encoding='utf-8')
 
-	pd.DataFrame(cm).to_csv("{}_cm.csv".format(model_name), encoding='utf-8')
-
-	report = skm.precision_recall_fscore_support(y_true, y_pred)
-	specificity_0 = cm[1][1]/(cm[1][1]+cm[1][0])
-	out_dict = { "precision" :report[0].round(3), "recall" : report[1].round(3),"f1-score" : report[2].round(3),
-				 "BCR": np.sqrt(report[1][0]*specificity_0).round(3)}
-
-	pd.DataFrame(out_dict).to_csv("{}_report.csv".format(model_name), encoding='utf-8')
-
+    report = skm.precision_recall_fscore_support(y_true, y_pred)
+    specificity_0 = cm[1][1] / (cm[1][1] + cm[1][0])
+    out_dict = {"precision": report[0].round(3), "recall": report[1].round(3), "f1-score": report[2].round(3),
+                "BCR": np.sqrt(report[1][0] * specificity_0).round(3)}
