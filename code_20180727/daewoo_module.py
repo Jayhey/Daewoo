@@ -64,7 +64,7 @@ def input_tensor(img_path, label, crop, RGB, resize):
 	
 	if crop == False & resize == True & RGB == True:
 		img_crop = tf.random_crop(img_float, size=[135, 480, 3])
-		img_resize = tf.image.resize_images(img_crop, size=[70, 240,3])
+		img_resize = tf.image.resize_images(img_crop, size=[70, 240])
 		label = tf.one_hot(label, NUM_CLASSES)
 
 		return img_crop, label
@@ -76,14 +76,14 @@ def input_tensor(img_path, label, crop, RGB, resize):
 		return img_crop, label
 		
 	if crop == False & resize == True & RGB == False:
-		img_crop = tf.random_crop(img_float, size=[135, 480])
+		img_crop = tf.random_crop(img_float, size=[135, 480,1])
 		img_resize = tf.image.resize_images(img_crop, size=[70, 240])
 		label = tf.one_hot(label, NUM_CLASSES)
 
 		return img_crop, label
 
 	if crop == False & resize == False & RGB == False:
-		img_crop = tf.random_crop(img_float, size=[135, 480])
+		img_crop = tf.random_crop(img_float, size=[135, 480,1])
 		label = tf.one_hot(label, NUM_CLASSES)
 
 		return img_crop, label
