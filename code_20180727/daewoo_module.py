@@ -32,7 +32,7 @@ def set_input(img, label):
 	test_img_tensor = tf.constant(test_img)
 	test_label_tensor = tf.constant(test_label)
 
-	return train_img_tensor, train_label_tensor, test_img_tensor, test_label_tensor
+	return train_img_tensor, train_label_tensor, test_img_tensor, test_label_tensor, tr_idx, ts_idx
 
 
 # string 텐서를 img 텐서로 변환 후 crop
