@@ -144,6 +144,19 @@ def get_metrics(y_pred):
 
 
 def ensemble_a_of_b(top_k=30, upper_bound_epoch=100):
+    """
+    위 함수들을 모아서 쉽게 ensemble 할 수 있는 모음 함수
+
+    Args:
+        top_k: accuracy 기준 상위 몇 개를 뽑을 것인지 지정
+        upper_bound_epoch: epoch 몇 회까지 학습한 것으로 계산할 것인지 지정
+
+    Returns:
+        결과 metric
+
+    Raises:
+        None
+    """
     sorted_file_names = get_sorted_file_names()
     selected_file_names = select_top_k_of_part(sorted_file_names, top_k=top_k, upper_bound_epoch=upper_bound_epoch)
     pred_ensemble = majority_vote(selected_file_names)
