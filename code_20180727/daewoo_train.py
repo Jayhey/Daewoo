@@ -125,6 +125,7 @@ else:
 ######################
 
 model = VGG16(x, y, bn=True, classification=classification)
+model = VGG16_CONCAT(x, y, bn=True, classification=classification)
 model = Inception_v3(x, y, bn=True, classification=classification)
 model = Resnet(x, y, bn=True, classification=classification, n=56)
 model = Densenet(x, y, bn=True, classification=classification, k=12, L=40)
