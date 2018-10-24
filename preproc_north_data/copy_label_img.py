@@ -40,11 +40,22 @@ DATA_TYPE = args.data_type
 SRC_DIR = args.src_dir
 DEST_DIR = args.dest_dir
 META_DATA_DIR = args.meta_data_dir
-print(args)
+
 # Meta data
 WAVE_DATA_PATH = os.path.join(os.path.abspath(META_DATA_DIR), 'wave.csv')
 WEATHER_DATA_PATH = os.path.join(os.path.abspath(META_DATA_DIR), 'weather.csv')
 FILTER_DATA_PATH = os.path.join(os.path.abspath(META_DATA_DIR), 'filter_data.csv')
+
+# Number of files
+NUM_1ST = 60253
+NUM_2ND = 232708
+NUM_3RD = 67256
+if DATA_TYPE == 1:
+    NUM_DATA = NUM_1ST
+elif DATA_TYPE == 2:
+    NUM_DATA = NUM_2ND
+else:
+    NUM_DATA = NUM_3RD
 
 
 def make_date_string(month, day, hour, minutes):
@@ -179,7 +190,10 @@ def filter_condition_func(x, filter_value, dates_value):
 def copy_label_img(interval=10):
     if not os.path.exists(DEST_DIR):
         os.mkdir(DEST_DIR)
-    with open('./daewoo_north_{}_result.csv'.format(DATA_TYPE), 'w') as f:
+    if not os.path.exists('./results'):
+        os.mkdir('./results')
+
+    with open('./results/daewoo_north_{}_result.csv'.format(DATA_TYPE), 'w') as f:
         column_names = 'file_name,year,month,day,hour,min,temperature,wind_direction,wind_speed,wave_height,wave_max_height,wave_period,wave_direction\n'
         f.write(column_names)
 
@@ -219,7 +233,7 @@ def copy_label_img(interval=10):
                     f.write(row)
                     cnt += 1
                     if cnt % 100 == 0:
-                        print("Processing {} of 67256".format(cnt))
+                        print("Processing {} of {}".format(cnt, NUM_DATA))
                         
                         
 if __name__ == "__main__":
